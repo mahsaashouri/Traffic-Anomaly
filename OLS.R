@@ -71,17 +71,17 @@ allyhour2021 <- forecast::msts(allyhour2021, seasonal.periods=c(24,24*7))
 n <- 2880
 t <- 240
 h <- 24
-sim <- 2000
+sim <- 10
 library(future.apply)
 plan(multisession, workers = 7)
 result.all <- list()
 sample.path <- list()
 error.train.all <- NULL
 start.time <- Sys.time()
-for(j in 1:127){
+for(j in 1:ncol(allyhour2021)){
   result <- NULL
   sample.test <- NULL
-  error.train <- NULL
+  error_train <- matrix(NA, ncol = ncol(allyhour2021), nrow = t-h)
   for(i in 0:((n-t-h)/h)){
     train <- window(allyhour2021[,j], start = c(1, ((i*h)+1)), end = c(1, (t + (i*h))))
     valid <- window(allyhour2021[,j], start = c(1,( t + (i*h) + 1)), end = c(1, (t + (i*h) +h)))
@@ -94,16 +94,23 @@ for(j in 1:127){
   }
   result.all[[length(result.all)+1]] <- result
   sample.path[[length(sample.path)+1]] <- sample.test
-  error.train.all <- cbind(error.train.all, fc[[2]])
+  error_train[,j] <- fc[[2]]
+  #error.train.all <- cbind(error.train.all, fc[[2]])
 }
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 
 #### saving results
+fc.OLS <- matrix(NA, ncol = ncol(allyhour2021), nrow = nrow(result.all[[1]]))
+for(i in 1:ncol(allyhour2021)){
+  fc.OLS[,i] <- result.all[[i]][,1]
+}
 
-result123 <- do.call(bind_cols, result.all)
-write.csv(result123, 'fc.OLS.csv')
+write.csv(fc.OLS, 'fc.OLS.csv')
 
+
+
+write.csv(error.train, 'error.train.OLS.csv')
 
 for(i in 1:length(sample.path)){
   write.csv(sample.path[[i]], paste0(i,".csv"))
