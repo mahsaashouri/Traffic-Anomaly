@@ -108,23 +108,20 @@ end.time <- Sys.time()
 time.taken <- end.time - start.time
 
 
-write.csv(error_train, 'error.train5.csv')
+write.csv(error_train, 'error.train.ARIMA.csv')
 
 fc.ARIMA <- matrix(NA, ncol = ncol(allyhour2021), nrow = nrow(result.all[[1]]))
 for(i in 1:ncol(allyhour2021)){
   fc.ARIMA[,i] <- result.all[[i]][,1]
 }
 
-
+## error train
 write.csv(fc.ARIMA, 'fc.ARIMA5.csv')
-## saving unrec lwr
-
-
 
 
 ## saving sample paths
 for(i in 1:length(sample.path)){
-  write.csv(sample.path[[i]], paste0(i+510,".csv"))
+  write.csv(sample.path[[i]], paste0(i,".csv"))
 }
 
 
