@@ -1,6 +1,7 @@
 
 library(tidyverse)
-source('olsfc.R')
+library(forecast)
+
 
 hour2021 <- read.csv('hour2021-final.csv', header = TRUE)
 hour2021 <- subset(hour2021, Freeway!= 'No5')
@@ -27,15 +28,14 @@ hour2021 <- hour2021 %>%
 
 
 ### 
-## number of series before removing No5 and 80 percent zero series: 1590 - # of series after removing No5 and 90 percent zero series 1591
+## number of series before removing No5 and 90 percent zero series: 1675 - # of series after removing No5 and 90 percent zero series 1591
 hourmatrix <- hour2021$traffic %>%
   matrix(nrow = 2880, ncol = 1590) %>%
   as.data.frame() 
 
-
-names <- unique(paste(substr(hour2021$Region, 1, 1), hour2021$Station.code,  hour2021$Freeway.code, hour2021$direction, hour2021$vehicle.type, sep = "")) 
+#zerocol <- hourmatrix[,colSums(hourmatrix)==0]
+names <- unique(paste(substr(hour2021$Region, 1, 1), hour2021$Station.code, hour2021$Freeway.code , hour2021$direction, hour2021$vehicle.type, sep = "")) 
 colnames(hourmatrix) <- names
-
 
 name_length <- str_length(names)
 grouping_hts <- rbind(
@@ -73,49 +73,58 @@ allyhour2021 <- forecast::msts(allyhour2021, seasonal.periods=c(24,24*7))
 n <- 2880
 t <- 240
 h <- 24
-sim <- 10
-library(future.apply)
-plan(multisession, workers = 7)
+sim <- 2000
+
 result.all <- list()
 sample.path <- list()
-error.train.all <- NULL
-error_train <- matrix(NA, ncol = ncol(allyhour2021), nrow = t-h)
+#error.train.all <- NULL
 start.time <- Sys.time()
+error_train <- matrix(NA, ncol = ncol(allyhour2021), nrow = t)
 for(j in 1:ncol(allyhour2021)){
-  result <- NULL
+  fc.test <- NULL
   sample.test <- NULL
+  error.train <- NULL
   for(i in 0:((n-t-h)/h)){
     train <- window(allyhour2021[,j], start = c(1, ((i*h)+1)), end = c(1, (t + (i*h))))
     valid <- window(allyhour2021[,j], start = c(1,( t + (i*h) + 1)), end = c(1, (t + (i*h) +h)))
-   # set.seed(123)
-    fc <- olsfc_BPI_F(train, h, maxlag = h, nolag = c(1,h), sim = sim)
-    sample.test <- rbind(sample.test, do.call(rbind, fc[[3]]))
-    m <- data.frame(fc[[1]],apply(fc[[1]],2,as.numeric))[,4:6]
-    result <- rbind(result, m)
-    error_train[,j] <- as.vector(fc[[2]])
+    #set.seed(123)
+    f.model <- auto.arima(train,  seasonal.test = "ocsb", xreg=fourier(train, K = c(3,2))) 
+    f.error.train <- resid(f.model)
+    #f.error.train <- as.data.frame(c(train)) - as.data.frame(c(forecast(f.model, xreg=fourier(train, K = c(3,2)))$mean))
+    f.fc.test <- forecast(f.model, xreg=fourier(train,K=c(3,2), h = h))$mean
+    sample.paths <- matrix(NA, ncol = sim, nrow =  h)
+    for (g in 1:sim) {
+      sample.paths[,g] <- simulate(f.model, future = TRUE, nsim=h, xreg=fourier(train,K=c(3,2), h = h))
+    }
+    sample.test <- rbind(sample.test, sample.paths)
+    fc.test <- rbind(fc.test, as.data.frame(c(f.fc.test)))
+    error_train[,j] <- as.vector(f.error.train)
     print(j)
   }
-  result.all[[length(result.all)+1]] <- result
+  result.all[[length(result.all)+1]] <- fc.test
   sample.path[[length(sample.path)+1]] <- sample.test
 }
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 
-#### saving results
-fc.OLS <- matrix(NA, ncol = ncol(allyhour2021), nrow = nrow(result.all[[1]]))
+
+write.csv(error_train, 'error.train5.csv')
+
+fc.ARIMA <- matrix(NA, ncol = ncol(allyhour2021), nrow = nrow(result.all[[1]]))
 for(i in 1:ncol(allyhour2021)){
-  fc.OLS[,i] <- result.all[[i]][,1]
+  fc.ARIMA[,i] <- result.all[[i]][,1]
 }
 
-write.csv(fc.OLS, 'fc.OLS.csv')
+
+write.csv(fc.ARIMA, 'fc.ARIMA5.csv')
+## saving unrec lwr
 
 
-## error train
-write.csv(error.train, 'error.train.OLS.csv')
 
-## sample path
+
+## saving sample paths
 for(i in 1:length(sample.path)){
-  write.csv(sample.path[[i]], paste0(i,".csv"))
+  write.csv(sample.path[[i]], paste0(i+510,".csv"))
 }
 
 
