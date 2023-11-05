@@ -1,6 +1,8 @@
 
 library(tidyverse)
 source('olsfc.R')
+source('smatrix.R')
+source('CG-shrink.R')
 
 hour2021 <- read.csv('hour2021-final.csv', header = TRUE)
 hour2021 <- subset(hour2021, Freeway!= 'No5')
@@ -65,7 +67,8 @@ grouping_hts <- rbind(
 
 library(hts)
 hourgts <- gts(hourmatrix, groups = grouping_hts) 
-
+gmat <- GmatrixG(hourgts$groups)
+smatrix <- as.matrix(SmatrixM(gmat))
 
 allyhour2021 <- aggts(hourgts) 
 allyhour2021 <- forecast::msts(allyhour2021, seasonal.periods=c(24,24*7))
@@ -73,17 +76,17 @@ allyhour2021 <- forecast::msts(allyhour2021, seasonal.periods=c(24,24*7))
 n <- 2880
 t <- 240
 h <- 24
-sim <- 10
+sim <- 2
 library(future.apply)
 plan(multisession, workers = 7)
 result.all <- list()
 sample.path <- list()
 error.train.all <- NULL
-error_train <- matrix(NA, ncol = ncol(allyhour2021), nrow = t-h)
 start.time <- Sys.time()
 for(j in 1:ncol(allyhour2021)){
   result <- NULL
   sample.test <- NULL
+  error.train <- NULL
   for(i in 0:((n-t-h)/h)){
     train <- window(allyhour2021[,j], start = c(1, ((i*h)+1)), end = c(1, (t + (i*h))))
     valid <- window(allyhour2021[,j], start = c(1,( t + (i*h) + 1)), end = c(1, (t + (i*h) +h)))
@@ -92,11 +95,12 @@ for(j in 1:ncol(allyhour2021)){
     sample.test <- rbind(sample.test, do.call(rbind, fc[[3]]))
     m <- data.frame(fc[[1]],apply(fc[[1]],2,as.numeric))[,4:6]
     result <- rbind(result, m)
-    error_train[,j] <- as.vector(fc[[2]])
+    error.train <- bind_rows(error.train, as.data.frame(fc[[2]]))
     print(j)
   }
   result.all[[length(result.all)+1]] <- result
   sample.path[[length(sample.path)+1]] <- sample.test
+  error.train.all <- bind_cols(error.train.all, error.train)
 }
 end.time <- Sys.time()
 time.taken <- end.time - start.time
@@ -111,7 +115,7 @@ write.csv(fc.OLS, 'fc.OLS.csv')
 
 
 ## error train
-write.csv(error.train, 'error.train.OLS.csv')
+write.csv(error_train, 'error.train.OLS.csv')
 
 ## sample path
 for(i in 1:length(sample.path)){
@@ -119,3 +123,122 @@ for(i in 1:length(sample.path)){
 }
 
 
+library(rio)
+
+mydataf <- lapply(1:ncol(sample.path[[1]]), function(y) as.data.frame(sapply(sample.path, function(x) x[, y])))
+
+
+# name the data frames
+names(mydataf) <- 1:length(mydataf)
+
+fc.OLS.res <- list()
+for(i in 0:(n-t-h)/h){
+  fc.OLS.res[[i+1]] <- error.train.all[(1+((t-h)*i)):((t-h)+((t-h)*i)),]
+}
+
+library(Matrix)
+start.time <- Sys.time()
+list.G <- list()
+for(i in 1:length(fc.OLS.res)){
+  res <- as.matrix(fc.OLS.res[[i]])
+  tar <- lowerD(res)
+  shrink <- shrink.estim(res, tar)
+  w.1 <- shrink[[1]]
+  lambda <- shrink[[2]]
+  weights <-  methods::as(w.1, "sparseMatrix")
+  list.G[[length(list.G)+1]] <- weights
+  print(i)
+}
+
+list.sample.rec <- list()
+for(i in 1:length(mydataf)){
+  fit.test <- split(mydataf[[i]], rep(1:length(fc.OLS.res), each=(24)))
+  result.path <- NULL
+  for(j in 1:length(list.G)){
+    result.path <- t(CG(fit.test[[j]], smatrix, weights = list.G[[j]]))
+  }
+  list.sample.rec[[length(list.sample.rec)+1]] <- result.path
+  print(i)
+}
+
+# name the data frames
+
+names(list.sample.rec) <- 1:length(list.sample.rec)
+
+#library(abind)
+#test <- abind(list.sample.rec, along = 3)
+
+#quan05 <- apply(test, 1:2, function(x) quantile(x, probs = c(0.05)))
+#quan95 <- apply(test, 1:2, function(x) quantile(x, probs = c(0.95)))
+#quan975 <- apply(test, 1:2, function(x) quantile(x, probs = c(0.975)))
+#quan25 <- apply(test, 1:2, function(x) quantile(x, probs = c(0.025)))
+
+## Computing prediction intervals - 95% and 99%
+mydataf2 <- lapply(1:ncol(list.sample.rec[[1]]), function(y) as.data.frame(sapply(list.sample.rec, function(x) x[, y])))
+
+quan975 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
+
+for(i in 1:length(mydataf2)){
+  quan975[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.975))
+}
+
+quan25 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
+
+for(i in 1:length(mydataf2)){
+  quan25[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.025))
+}
+
+quan95 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
+
+for(i in 1:length(mydataf2)){
+  quan95[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.95))
+}
+
+quan05 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
+
+for(i in 1:length(mydataf2)){
+  quan05[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.05))
+}
+
+
+write.csv(quan05, 'quan05.csv')
+write.csv(quan95, 'quan95.csv')
+write.csv(quan975, 'quan975.csv')
+write.csv(quan25, 'quan25.csv')
+ 
+
+## Reconciling base forecasts
+colnames(fc.OLS) <- colnames(allyhour2021)
+fit.list <- list()
+for(i in 0:(n-t-h)/h){
+  fit.list[[i+1]] <- fc.OLS[(1+(h*i)):(h+(h*i)),]
+}
+
+list <- list()
+list.G <- list()
+start.time <- Sys.time()
+for(i in 1:length(fc.OLS.res)){
+  res <- as.matrix(fc.OLS.res[[i]])
+  tar <- lowerD(res)
+  shrink <- shrink.estim(res, tar)
+  w.1 <- shrink[[1]]
+  lambda <- shrink[[2]]
+  weights <-  methods::as(w.1, "sparseMatrix")
+  fc.rec <- t(CG(fit.list[[i]], smatrix, weights = weights))
+  colnames(fc.rec) <- colnames(allyhour2021) 
+  list[[length(list)+1]] <- fc.rec
+  #list.G[[length(list.G)+1]] <- P
+  print(i)
+}
+
+end.time <- Sys.time()
+time.taken.forecast.rec <- end.time - start.time
+
+result.fit.all.rec <- do.call(rbind.data.frame, list)
+
+write.csv(result.fit.all.rec, 'fc.OLS.rec.csv')
+
+### print computation times
+time.taken.base
+time.taken.sample.path.rec
+time.taken.forecast.rec
