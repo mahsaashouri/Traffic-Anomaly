@@ -76,7 +76,7 @@ allyhour2021 <- forecast::msts(allyhour2021, seasonal.periods=c(24,24*7))
 n <- 2880
 t <- 240
 h <- 24
-sim <- 2
+sim <- 2000
 library(future.apply)
 plan(multisession, workers = 7)
 result.all <- list()
@@ -215,7 +215,6 @@ for(i in 0:(n-t-h)/h){
 }
 
 list <- list()
-list.G <- list()
 start.time <- Sys.time()
 for(i in 1:length(fc.OLS.res)){
   res <- as.matrix(fc.OLS.res[[i]])
@@ -227,7 +226,6 @@ for(i in 1:length(fc.OLS.res)){
   fc.rec <- t(CG(fit.list[[i]], smatrix, weights = weights))
   colnames(fc.rec) <- colnames(allyhour2021) 
   list[[length(list)+1]] <- fc.rec
-  #list.G[[length(list.G)+1]] <- P
   print(i)
 }
 
