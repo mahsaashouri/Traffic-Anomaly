@@ -16,7 +16,7 @@ holiday.14 <- read.csv('holiday.14.csv', header = TRUE)[-c(1:240),-1]
 holiday.15 <- read.csv('holiday.15.csv', header = TRUE)[-c(1:240),-1]
 holiday.16 <- read.csv('holiday.16.csv', header = TRUE)[-c(1:240),-1]
 holiday.17 <- read.csv('holiday.17.csv', header = TRUE)[-c(1:240),-1]
-holiday.18 <- read.csv('holiday.18.csv', header = TRUE)[-c(1:240),-1]
+holiday.18 <- read.csv('holiday.18.csv', header = TRUE)[-c(1:336),-1]
 ## rec forecasts
 fc.rec.1 <- read.csv('fc.OLS.rec-1.csv', header = TRUE)
 fc.rec.2 <- read.csv('fc.OLS.rec-2.csv', header = TRUE)
