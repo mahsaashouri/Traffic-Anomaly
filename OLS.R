@@ -155,7 +155,8 @@ for(i in 1:length(mydataf)){
   fit.test <- split(mydataf[[i]], rep(1:length(fc.OLS.res), each=(24)))
   result.path <- NULL
   for(j in 1:length(list.G)){
-    result.path <- t(CG(fit.test[[j]], smatrix, weights = list.G[[j]]))
+    fc.rec <- t(CG(fit.test[[j]], smatrix, weights = list.G[[j]]))
+    result.path <- bind_rows(result.path, as.data.frame(fc.rec))
   }
   list.sample.rec[[length(list.sample.rec)+1]] <- result.path
   print(i)
