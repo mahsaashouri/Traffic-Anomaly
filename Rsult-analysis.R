@@ -1,21 +1,21 @@
 ## actual values
-holiday.1 <- read.csv('holiday.1.csv', header = TRUE)[-c(1:240),-1]
-holiday.2 <- read.csv('holiday.2.csv', header = TRUE)[-c(1:240),-1]
-holiday.3 <- read.csv('holiday.3.csv', header = TRUE)[-c(1:240),-1]
-holiday.4 <- read.csv('holiday.4.csv', header = TRUE)[-c(1:240),-1]
-holiday.5 <- read.csv('holiday.5.csv', header = TRUE)[-c(1:240),-1]
-holiday.6 <- read.csv('holiday.6.csv', header = TRUE)[-c(1:240),-1]
-holiday.7 <- read.csv('holiday.7.csv', header = TRUE)[-c(1:240),-1]
-holiday.8 <- read.csv('holiday.8.csv', header = TRUE)[-c(1:240),-1]
-holiday.9 <- read.csv('holiday.9.csv', header = TRUE)[-c(1:240),-1]
-holiday.10 <- read.csv('holiday.10.csv', header = TRUE)[-c(1:240),-1]
-holiday.11 <- read.csv('holiday.11.csv', header = TRUE)[-c(1:240),-1]
-holiday.12 <- read.csv('holiday.12.csv', header = TRUE)[-c(1:240),-1]
-holiday.13 <- read.csv('holiday.13.csv', header = TRUE)[-c(1:240),-1]
-holiday.14 <- read.csv('holiday.14.csv', header = TRUE)[-c(1:240),-1]
-holiday.15 <- read.csv('holiday.15.csv', header = TRUE)[-c(1:240),-1]
-holiday.16 <- read.csv('holiday.16.csv', header = TRUE)[-c(1:240),-1]
-holiday.17 <- read.csv('holiday.17.csv', header = TRUE)[-c(1:240),-1]
+holiday.1 <- read.csv('holiday.1.csv', header = TRUE)[-c(1:336),-1]
+holiday.2 <- read.csv('holiday.2.csv', header = TRUE)[-c(1:336),-1]
+holiday.3 <- read.csv('holiday.3.csv', header = TRUE)[-c(1:336),-1]
+holiday.4 <- read.csv('holiday.4.csv', header = TRUE)[-c(1:336),-1]
+holiday.5 <- read.csv('holiday.5.csv', header = TRUE)[-c(1:336),-1]
+holiday.6 <- read.csv('holiday.6.csv', header = TRUE)[-c(1:336),-1]
+holiday.7 <- read.csv('holiday.7.csv', header = TRUE)[-c(1:336),-1]
+holiday.8 <- read.csv('holiday.8.csv', header = TRUE)[-c(1:336),-1]
+holiday.9 <- read.csv('holiday.9.csv', header = TRUE)[-c(1:336),-1]
+holiday.10 <- read.csv('holiday.10.csv', header = TRUE)[-c(1:336),-1]
+holiday.11 <- read.csv('holiday.11.csv', header = TRUE)[-c(1:336),-1]
+holiday.12 <- read.csv('holiday.12.csv', header = TRUE)[-c(1:336),-1]
+holiday.13 <- read.csv('holiday.13.csv', header = TRUE)[-c(1:336),-1]
+holiday.14 <- read.csv('holiday.14.csv', header = TRUE)[-c(1:336),-1]
+holiday.15 <- read.csv('holiday.15.csv', header = TRUE)[-c(1:336),-1]
+holiday.16 <- read.csv('holiday.16.csv', header = TRUE)[-c(1:336),-1]
+holiday.17 <- read.csv('holiday.17.csv', header = TRUE)[-c(1:336),-1]
 holiday.18 <- read.csv('holiday.18.csv', header = TRUE)[-c(1:336),-1]
 ## rec forecasts
 fc.rec.1 <- read.csv('fc.OLS.rec-1.csv', header = TRUE)
@@ -210,9 +210,9 @@ date.18 <- seq(as.POSIXct("2021-04-30 00:00:00", tz="CET"), as.POSIXct("2021-04-
 
 #N2971S31
 
-test.data <- cbind.data.frame('date' = date.7 , 'actual' = holiday.7[,'N2971S31'] , 'OLS' = fc.rec.7[,'N2971S31'],
-                              'upper.95' = quan975.7[,'N2971S31'], 'lower.95' = quan25.7[,'N2971S31'],
-                              'upper.90' = quan95.7[,'N2971S31'], 'lower.90' = quan05.7[,'N2971S31'])
+test.data <- cbind.data.frame('date' = date.3 , 'actual' = holiday.3[,'G6.CN'] , 'OLS' = fc.rec.3[,'G6.CN'],
+                              'upper.95' = quan975.3[,'G6.CN'], 'lower.95' = quan25.3[,'G6.CN'],
+                              'upper.90' = quan95.3[,'G6.CN'], 'lower.90' = quan05.3[,'G6.CN'])
 
 ggplot(data = test.data) + geom_line(aes(x = date,y = actual, color='actual', size = 'actual')) + 
   geom_line(aes(x = date, y = OLS, color='OLS', size = 'OLS')) +
@@ -240,7 +240,7 @@ ggplot(data = test.data) + geom_line(aes(x = date,y = actual, color='actual', si
     legend.text=element_text(size=20))
 
 
-### compare values to detect anomaliesL: Region by Direction
+### compare values to detect anomalies: Region by Direction
 
 ## Holiday 1
 
