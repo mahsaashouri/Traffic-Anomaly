@@ -191,6 +191,8 @@ colnames(quan95.17) <- colnames(fc.rec.1)
 quan95.18 <- read.csv('quan95-18.csv', header = TRUE)
 colnames(quan95.18) <- colnames(fc.rec.1)
 
+
+
 ## define dates
 date.1 <- seq(as.POSIXct("2019-02-02 00:00:00", tz="CET"), as.POSIXct("2019-02-10 23:00:00", tz="CET"), by="hour")
 date.2 <- seq(as.POSIXct("2019-02-28 00:00:00", tz="CET"), as.POSIXct("2019-03-03 23:00:00", tz="CET"), by="hour")
@@ -1240,3 +1242,38 @@ ggplot() + geom_line(aes(y = All.anom.HD$NRND.1),color='red') +
 
 plot(All.anom.HD$NRND.1, type = 'l')
 
+
+
+#############Comparison
+## ARIMA holiday.2
+fc.arima.rec.2 <- read.csv('fc.arima.rec-2.csv', header = TRUE)
+quan05.arima.2 <- read.csv('quan05.arima-2.csv', header = TRUE)
+colnames(quan05.arima.2) <- colnames(fc.arima.rec.2)
+quan95.arima.2 <- read.csv('quan95.arima-2.csv', header = TRUE)
+colnames(quan95.arima.2) <- colnames(fc.arima.rec.2)
+quan25.arima.2 <- read.csv('quan25.arima-2.csv', header = TRUE)
+colnames(quan25.arima.2) <- colnames(fc.arima.rec.2)
+quan975.arima.2 <- read.csv('quan975.arima-2.csv', header = TRUE)
+colnames(quan975.arima.2) <- colnames(fc.arima.rec.2)
+
+anom.arima.N1.2.ND = ifelse(quan975.arima.2$G9.2N > 0, ifelse(quan975.arima.2$G9.2N > holiday.2$G9.2N,0,1), 0)
+anom.arima.N1.2.SD = ifelse(quan975.arima.2$G9.2S > 0, ifelse(quan975.arima.2$G9.2S > holiday.2$G9.2S,0,1), 0)
+anom.arima.N3.2.ND = ifelse(quan975.arima.2$G9.3N > 0, ifelse(quan975.arima.2$G9.3N > holiday.2$G9.3N,0,1), 0)
+anom.arima.N3.2.SD = ifelse(quan975.arima.2$G9.3S > 0, ifelse(quan975.arima.2$G9.3S > holiday.2$G9.3S,0,1), 0)
+anom.arima.EN1.2.ND = ifelse(quan975.arima.2$G9.1N > 0, ifelse(quan975.arima.2$G9.1N > holiday.2$G9.1N,0,1), 0)
+anom.arima.EN1.2.SD = ifelse(quan975.arima.2$G9.1S > 0, ifelse(quan975.arima.2$G9.1S > holiday.2$G9.1S,0,1), 0)
+anom.arima.EN1.2.ED = ifelse(quan975.arima.2$G9.1E > 0, ifelse(quan975.arima.2$G9.1E > holiday.2$G9.1E,0,1), 0)
+anom.arima.EN1.2.WD = ifelse(quan975.arima.2$G9.1W > 0, ifelse(quan975.arima.2$G9.1W > holiday.2$G9.1W,0,1), 0)
+
+
+
+anom.arima.2 <- cbind.data.frame('date' = date.2, 'N1ND' = anom.arima.N1.2.ND, 'N1SD' = anom.arima.N1.2.SD, 'N3ND' = anom.arima.N3.2.ND, 'N3SD' = anom.arima.N3.2.SD,'EN1ND' = anom.arima.EN1.2.ND, 
+                           'EN1SD' = anom.arima.EN1.2.SD, 'EN1ED' = anom.arima.EN1.2.ED, 'EN1WD' = anom.arima.EN1.2.WD)
+library(tidyverse)
+anom.arima.2 <- separate(data = anom.arima.2, col = date, into  = c('Date', 'Time'), sep = ' ')
+
+## comparison arima by OLS
+common_ones <- sum(anom.arima.2 == 1 & anom.2 == 1, na.rm = TRUE)
+total_ones <- sum(anom.2 == 1, na.rm = TRUE)  # Total number of ones 
+
+percentage_common_ones <- (common_ones / total_ones) * 100
