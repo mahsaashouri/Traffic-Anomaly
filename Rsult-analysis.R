@@ -36,6 +36,7 @@ fc.rec.15 <- read.csv('fc.OLS.rec-15.csv', header = TRUE)
 fc.rec.16 <- read.csv('fc.OLS.rec-16.csv', header = TRUE)
 fc.rec.17 <- read.csv('fc.OLS.rec-17.csv', header = TRUE)
 fc.rec.18 <- read.csv('fc.OLS.rec-18.csv', header = TRUE)
+
 ## PI rec 95% - lower
 quan25.1 <- read.csv('quan25-1.csv', header = TRUE)
 colnames(quan25.1) <- colnames(fc.rec.1)
@@ -73,6 +74,7 @@ quan25.17 <- read.csv('quan25-17.csv', header = TRUE)
 colnames(quan25.17) <- colnames(fc.rec.1)
 quan25.18 <- read.csv('quan25-18.csv', header = TRUE)
 colnames(quan25.18) <- colnames(fc.rec.1)
+
 
 ## PI rec 95% - upper
 quan975.1 <- read.csv('quan975-1.csv', header = TRUE)
@@ -112,6 +114,7 @@ colnames(quan975.17) <- colnames(fc.rec.1)
 quan975.18 <- read.csv('quan975-18.csv', header = TRUE)
 colnames(quan975.18) <- colnames(fc.rec.1)
 
+
 ## PI rec 90% - lower
 quan05.1 <- read.csv('quan05-1.csv', header = TRUE)
 colnames(quan05.1) <- colnames(fc.rec.1)
@@ -149,6 +152,7 @@ quan05.17 <- read.csv('quan05-17.csv', header = TRUE)
 colnames(quan05.17) <- colnames(fc.rec.1)
 quan05.18 <- read.csv('quan05-18.csv', header = TRUE)
 colnames(quan05.18) <- colnames(fc.rec.1)
+
 ## PI rec 90% - upper
 quan95.1 <- read.csv('quan95-1.csv', header = TRUE)
 colnames(quan95.1) <- colnames(fc.rec.1)
@@ -210,9 +214,9 @@ date.18 <- seq(as.POSIXct("2021-04-30 00:00:00", tz="CET"), as.POSIXct("2021-04-
 
 #N2971S31
 
-test.data <- cbind.data.frame('date' = date.3 , 'actual' = holiday.3[,'G6.CN'] , 'OLS' = fc.rec.3[,'G6.CN'],
-                              'upper.95' = quan975.3[,'G6.CN'], 'lower.95' = quan25.3[,'G6.CN'],
-                              'upper.90' = quan95.3[,'G6.CN'], 'lower.90' = quan05.3[,'G6.CN'])
+test.data <- cbind.data.frame('date' = date.18 , 'actual' = holiday.18[,'G6.CN'] , 'OLS' = fc.rec.18[,'G6.CN'], 
+                              'upper.95' = quan975.18[,'G6.CN'], 'lower.95' = quan25.18[,'G6.CN'],
+                              'upper.90' = quan95.18[,'G6.CN'], 'lower.90' = quan05.18[,'G6.CN'])
 
 ggplot(data = test.data) + geom_line(aes(x = date,y = actual, color='actual', size = 'actual')) + 
   geom_line(aes(x = date, y = OLS, color='OLS', size = 'OLS')) +

@@ -34,6 +34,7 @@ olsfc_BPI_F <- function(x, h, maxlag = 0, nolag = NULL , sim = 2000) {
   
   # Fit model
   fit <- lm(form, data = modeldata)
+  #fit <- MASS::rlm(form, data = modeldata, maxit = 100)
   # Adjust the residuals
   s.resid1 <- residuals(fit)
   leverage <- influence(fit)$hat
