@@ -1245,35 +1245,54 @@ plot(All.anom.HD$NRND.1, type = 'l')
 
 
 #############Comparison
-## ARIMA holiday.2
-fc.arima.rec.2 <- read.csv('fc.arima.rec-2.csv', header = TRUE)
-quan05.arima.2 <- read.csv('quan05.arima-2.csv', header = TRUE)
-colnames(quan05.arima.2) <- colnames(fc.arima.rec.2)
-quan95.arima.2 <- read.csv('quan95.arima-2.csv', header = TRUE)
-colnames(quan95.arima.2) <- colnames(fc.arima.rec.2)
-quan25.arima.2 <- read.csv('quan25.arima-2.csv', header = TRUE)
-colnames(quan25.arima.2) <- colnames(fc.arima.rec.2)
-quan975.arima.2 <- read.csv('quan975.arima-2.csv', header = TRUE)
-colnames(quan975.arima.2) <- colnames(fc.arima.rec.2)
+## ARIMA holiday
+fc.arima.rec.6 <- read.csv('fc.arima.rec-6.csv', header = TRUE)
+quan05.arima.6 <- read.csv('quan05.arima-6.csv', header = TRUE)
+colnames(quan05.arima.6) <- colnames(fc.arima.rec.1)
+quan95.arima.6 <- read.csv('quan95.arima-6.csv', header = TRUE)
+colnames(quan95.arima.6) <- colnames(fc.arima.rec.1)
+quan25.arima.6 <- read.csv('quan25.arima-6.csv', header = TRUE)
+colnames(quan25.arima.6) <- colnames(fc.arima.rec.1)
+quan975.arima.6 <- read.csv('quan975.arima-6.csv', header = TRUE)
+colnames(quan975.arima.6) <- colnames(fc.arima.rec.1)
 
-anom.arima.N1.2.ND = ifelse(quan975.arima.2$G9.2N > 0, ifelse(quan975.arima.2$G9.2N > holiday.2$G9.2N,0,1), 0)
-anom.arima.N1.2.SD = ifelse(quan975.arima.2$G9.2S > 0, ifelse(quan975.arima.2$G9.2S > holiday.2$G9.2S,0,1), 0)
-anom.arima.N3.2.ND = ifelse(quan975.arima.2$G9.3N > 0, ifelse(quan975.arima.2$G9.3N > holiday.2$G9.3N,0,1), 0)
-anom.arima.N3.2.SD = ifelse(quan975.arima.2$G9.3S > 0, ifelse(quan975.arima.2$G9.3S > holiday.2$G9.3S,0,1), 0)
-anom.arima.EN1.2.ND = ifelse(quan975.arima.2$G9.1N > 0, ifelse(quan975.arima.2$G9.1N > holiday.2$G9.1N,0,1), 0)
-anom.arima.EN1.2.SD = ifelse(quan975.arima.2$G9.1S > 0, ifelse(quan975.arima.2$G9.1S > holiday.2$G9.1S,0,1), 0)
-anom.arima.EN1.2.ED = ifelse(quan975.arima.2$G9.1E > 0, ifelse(quan975.arima.2$G9.1E > holiday.2$G9.1E,0,1), 0)
-anom.arima.EN1.2.WD = ifelse(quan975.arima.2$G9.1W > 0, ifelse(quan975.arima.2$G9.1W > holiday.2$G9.1W,0,1), 0)
+## Region vs. Direction
+anom.arima.N.6.ND = ifelse(quan975.arima.6$G6.NN > 0, ifelse(quan975.arima.6$G6.NN > holiday.6$G6.NN,0,1), 0)
+anom.arima.N.6.SD = ifelse(quan975.arima.6$G6.NS > 0, ifelse(quan975.arima.6$G6.NS > holiday.6$G6.NS,0,1), 0)
+anom.arima.N.6.ED = ifelse(quan975.arima.6$G6.NE > 0, ifelse(quan975.arima.6$G6.NE > holiday.6$G6.NE,0,1), 0)
+anom.arima.N.6.WD = ifelse(quan975.arima.6$G6.NW > 0, ifelse(quan975.arima.6$G6.NW > holiday.6$G6.NW,0,1), 0)
+anom.arima.C.6.ND = ifelse(quan975.arima.6$G6.CN > 0, ifelse(quan975.arima.6$G6.CN > holiday.6$G6.CN,0,1), 0)
+anom.arima.C.6.SD = ifelse(quan975.arima.6$G6.CS > 0, ifelse(quan975.arima.6$G6.CS > holiday.6$G6.CS,0,1), 0)
+anom.arima.S.6.ND = ifelse(quan975.arima.6$G6.SN > 0, ifelse(quan975.arima.6$G6.SN > holiday.6$G6.SN,0,1), 0)
+anom.arima.S.6.SD = ifelse(quan975.arima.6$G6.SS > 0, ifelse(quan975.arima.6$G6.SS > holiday.6$G6.SS,0,1), 0)
+
+anom.arima.6 <- cbind.data.frame('date' = date.6, 'NRND' = anom.arima.N.6.ND, 'NRSD' = anom.arima.N.6.SD, 'NRED' = anom.arima.N.6.ED, 
+                                 'NRWD' = anom.arima.N.6.WD,'CRND' = anom.arima.C.6.ND, 
+                            'CRSD' = anom.arima.C.6.SD, 'SRND' = anom.arima.S.6.ND, 'SRSD' = anom.arima.S.6.SD)
+anom.arima.6 <- separate(data = anom.arima.6, col = date, into  = c('Date', 'Time'), sep = ' ')
+
+## Highway vs. Direction
+anom.arima.N1.6.ND = ifelse(quan975.arima.6$G9.2N > 0, ifelse(quan975.arima.6$G9.2N > holiday.6$G9.2N,0,1), 0)
+anom.arima.N1.6.SD = ifelse(quan975.arima.6$G9.2S > 0, ifelse(quan975.arima.6$G9.2S > holiday.6$G9.2S,0,1), 0)
+anom.arima.N3.6.ND = ifelse(quan975.arima.6$G9.3N > 0, ifelse(quan975.arima.6$G9.3N > holiday.6$G9.3N,0,1), 0)
+anom.arima.N3.6.SD = ifelse(quan975.arima.6$G9.3S > 0, ifelse(quan975.arima.6$G9.3S > holiday.6$G9.3S,0,1), 0)
+anom.arima.EN1.6.ND = ifelse(quan975.arima.6$G9.1N > 0, ifelse(quan975.arima.6$G9.1N > holiday.6$G9.1N,0,1), 0)
+anom.arima.EN1.6.SD = ifelse(quan975.arima.6$G9.1S > 0, ifelse(quan975.arima.6$G9.1S > holiday.6$G9.1S,0,1), 0)
+anom.arima.EN1.6.ED = ifelse(quan975.arima.6$G9.1E > 0, ifelse(quan975.arima.6$G9.1E > holiday.6$G9.1E,0,1), 0)
+anom.arima.EN1.6.WD = ifelse(quan975.arima.6$G9.1W > 0, ifelse(quan975.arima.6$G9.1W > holiday.6$G9.1W,0,1), 0)
 
 
 
-anom.arima.2 <- cbind.data.frame('date' = date.2, 'N1ND' = anom.arima.N1.2.ND, 'N1SD' = anom.arima.N1.2.SD, 'N3ND' = anom.arima.N3.2.ND, 'N3SD' = anom.arima.N3.2.SD,'EN1ND' = anom.arima.EN1.2.ND, 
-                           'EN1SD' = anom.arima.EN1.2.SD, 'EN1ED' = anom.arima.EN1.2.ED, 'EN1WD' = anom.arima.EN1.2.WD)
+anom.arima.6 <- cbind.data.frame('date' = date.6, 'N1ND' = anom.arima.N1.6.ND, 'N1SD' = anom.arima.N1.6.SD, 'N3ND' = anom.arima.N3.6.ND, 
+                                 'N3SD' = anom.arima.N3.6.SD,'EN1ND' = anom.arima.EN1.6.ND, 
+                           'EN1SD' = anom.arima.EN1.6.SD, 'EN1ED' = anom.arima.EN1.6.ED, 'EN1WD' = anom.arima.EN1.6.WD)
 library(tidyverse)
-anom.arima.2 <- separate(data = anom.arima.2, col = date, into  = c('Date', 'Time'), sep = ' ')
+anom.arima.6 <- separate(data = anom.arima.6, col = date, into  = c('Date', 'Time'), sep = ' ')
 
 ## comparison arima by OLS
-common_ones <- sum(anom.arima.2 == 1 & anom.2 == 1, na.rm = TRUE)
-total_ones <- sum(anom.2 == 1, na.rm = TRUE)  # Total number of ones 
+library(matrixcalc)
+common_ones_zeros <- hadamard.prod(as.matrix(anom.6[,-c(1,2)]), as.matrix(anom.arima.6[,-c(1,2)])) + 
+  hadamard.prod((1-as.matrix(anom.6[,-c(1,2)])), (1-as.matrix(anom.arima.6[,-c(1,2)])))
 
-percentage_common_ones <- (common_ones / total_ones) * 100
+sum(common_ones_zeros ==1)/(nrow(common_ones_zeros)*ncol(common_ones_zeros))
+
