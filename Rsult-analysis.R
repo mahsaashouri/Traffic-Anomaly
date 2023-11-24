@@ -511,13 +511,13 @@ write.csv(anom.17, 'anom.17.R.D.csv')
 write.csv(anom.18, 'anom.18.R.D.csv')
 
 #library(dplyr)
-anom.2$cat <- ifelse(anom.2$Time == c('00:00:00', '01:00:00', '02:00:00', '03:00:00', '04:00:00', '05:00:00'), 'cat1', 
-                     ifelse(anom.2$Time == c('06:00:00', '07:00:00', '08:00:00', '09:00:00', '10:00:00', '11:00:00'), 'cat2', 
-                            ifelse(anom.2$Time == c('12:00:00', '13:00:00', '14:00:00', '15:00:00', '16:00:00', '17:00:00'), 'cat3', 'cat4')))
-test <- split(anom.2, anom.2$cat)
+anom.18$cat <- ifelse(anom.18$Time == c('00:00:00', '01:00:00', '02:00:00', '03:00:00', '04:00:00', '05:00:00'), 'cat1', 
+                     ifelse(anom.18$Time == c('06:00:00', '07:00:00', '08:00:00', '09:00:00', '10:00:00', '11:00:00'), 'cat2', 
+                            ifelse(anom.18$Time == c('12:00:00', '13:00:00', '14:00:00', '15:00:00', '16:00:00', '17:00:00'), 'cat3', 'cat4')))
+test <- split(anom.18, anom.18$cat)
 anom.test <- lapply(test, function(x) {
   colSums(x[,sapply(x, is.numeric)])})
-test2 <- do.call(rbind, anom.test)
+test18 <- do.call(rbind, anom.test)
 
 All.anom.RD <- bind_rows(as.data.frame(test1), as.data.frame(test2), as.data.frame(test3), as.data.frame(test4), as.data.frame(test5), as.data.frame(test6), 
                          as.data.frame(test7), as.data.frame(test8), 
@@ -527,23 +527,36 @@ write.csv(All.anom.RD, 'All.anom.RD.csv')
 #############
 
 
-All.anom.RD.1 <- read.csv('All.anom.RD2.csv', header = TRUE)[,-1]
+All.anom.RD <- read.csv('All.anom.RD.csv', header = TRUE)[,-1]
+
+num_rows_per_dataframe <- 4
+num_small_dfs <- nrow(All.anom.RD) %/% num_rows_per_dataframe
+
+# Split the data frame into a list of smaller data frames
+list_of_dfs <- split(All.anom.RD, rep(1:num_small_dfs, each = num_rows_per_dataframe, length.out = nrow(All.anom.RD)))
+
+All.anom.RD <- list()
+for(i in 1: length(list_of_dfs)){
+  n.df <- cbind(list_of_dfs[[i]][1,], list_of_dfs[[i]][2,], list_of_dfs[[i]][3,], list_of_dfs[[i]][4,])
+  All.anom.RD[[length(All.anom.RD)+1]] <- n.df
+}
+All.anom.RD <- do.call(rbind.data.frame, All.anom.RD)
 
 No.days <- c(9, 4, 4, 3, 3, 4, 7, 3, 4, 3, 4, 4, 3, 3, 7, 3, 4, 1)
-All.anom.RD <- matrix(NA, ncol = ncol(All.anom.RD.1), nrow = nrow(All.anom.RD.1))
+All.anom.RD.1 <- matrix(NA, ncol = ncol(All.anom.RD), nrow = nrow(All.anom.RD))
 
 #for(i in 1:nrow(All.anom.RD.1)){
 #  All.anom.RD[i,] <- (as.numeric(All.anom.RD.1[i,]) - mean(as.numeric(All.anom.RD.1[i,])))/sd(as.numeric(All.anom.RD.1[i,]))
 #}
 
-for(i in 1:nrow(All.anom.RD.1)){
-  All.anom.RD[i,] <- as.numeric(All.anom.RD.1[i,])/No.days[i]
+for(i in 1:nrow(All.anom.RD)){
+  All.anom.RD.1[i,] <- as.numeric(All.anom.RD[i,])/No.days[i]
 }
 
-
-colnames(All.anom.RD) <- colnames(All.anom.RD.1)
-All.anom.RD <- as.data.frame(All.anom.RD)
-All.anom.RD$date <- c(1:18)
+colnames(All.anom.RD.1) <- c(paste0(colnames(All.anom.RD)[1:8], '.1'), paste0(colnames(All.anom.RD)[1:8], '.2'), 
+                             paste0(colnames(All.anom.RD)[1:8], '.3'), paste0(colnames(All.anom.RD)[1:8], '.4'))
+All.anom.RD.1 <- as.data.frame(All.anom.RD.1)
+All.anom.RD.1$date <- c(1:18)
 # hollabs <- c("2019-02-02~02-10", "02-28~03-03", "04-04~04-07", '06-07~06-09', '09-13~09-15', '10-10~10-13',
 #              '2020-01-23~01-29', '02-28~03-01', '04-02~04-05', '05-01~05-03', '06-25~06-28', '10-01~10-04',
 #              '10-09~10-11', '2021-01-01~01-03', '02-10~02-16', '02-27~03-01', '04-02~04-05', '04-30~04-30')
@@ -553,7 +566,7 @@ hollabs <- c("2019-1", "2", "3", '4', '5', '6',
              '7', '2021-1', '2', '3', '4', '5')
 
 
-p1 <- ggplot(All.anom.RD, aes(date)) + 
+p1 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = NRND.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = NRND.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = NRND.3, colour = "12:00-17:00"), size = 1) + 
@@ -571,7 +584,7 @@ p1 <- ggplot(All.anom.RD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_text(size = 20))
 
-p2 <- ggplot(All.anom.RD, aes(date)) + 
+p2 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = NRSD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = NRSD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = NRSD.3, colour = "12:00-17:00"), size = 1) + 
@@ -589,7 +602,7 @@ p2 <- ggplot(All.anom.RD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p3 <- ggplot(All.anom.RD, aes(date)) + 
+p3 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = NRED.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = NRED.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = NRED.3, colour = "12:00-17:00"), size = 1) + 
@@ -608,7 +621,7 @@ p3 <- ggplot(All.anom.RD, aes(date)) +
     axis.text.y = element_blank())
 
 
-p4 <- ggplot(All.anom.RD, aes(date)) + 
+p4 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = NRWD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = NRWD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = NRWD.3, colour = "12:00-17:00"), size = 1) + 
@@ -626,7 +639,7 @@ p4 <- ggplot(All.anom.RD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p5 <- ggplot(All.anom.RD, aes(date)) + 
+p5 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = CRND.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = CRND.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = CRND.3, colour = "12:00-17:00"), size = 1) + 
@@ -646,7 +659,7 @@ p5 <- ggplot(All.anom.RD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_text(size = 20))
 
-p6 <- ggplot(All.anom.RD, aes(date)) + 
+p6 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = CRSD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = CRSD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = CRSD.3, colour = "12:00-17:00"), size = 1) + 
@@ -666,7 +679,7 @@ p6 <- ggplot(All.anom.RD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p7 <- ggplot(All.anom.RD, aes(date)) + 
+p7 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = SRND.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = SRND.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = SRND.3, colour = "12:00-17:00"), size = 1) + 
@@ -686,7 +699,7 @@ p7 <- ggplot(All.anom.RD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p8 <- ggplot(All.anom.RD, aes(date)) + 
+p8 <- ggplot(All.anom.RD.1, aes(date)) + 
   geom_line(aes(y = SRSD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = SRSD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = SRSD.3, colour = "12:00-17:00"), size = 1) + 
@@ -709,18 +722,6 @@ p8 <- ggplot(All.anom.RD, aes(date)) +
 library(ggpubr)
 ggarrange(p1, p2, p3, p4, p5, p6, p7, p8, ncol=4, nrow=2, common.legend = TRUE, legend="top", heights = c(1, 1, 1, 1), widths = c(1,1,1,1))
 
-
-# All.anom.RD %>%
-#   gather(key,value, NRND.1, NRND.2, NRND.3, NRND.4) %>%
-#   ggplot(aes(x=date, y=value, colour=key)) +
-#   geom_line()
-
-
-ggplot() + geom_line(aes(y = All.anom.RD$NRND.1),color='red') + 
-  #geom_line(aes=All.anom.RD$NRND.2),color='blue') + 
-  ylab('Values')+xlab('date')
-
-plot(All.anom.RD$NRND.1, type = 'l')
 
 
 #####################
@@ -1027,13 +1028,13 @@ write.csv(anom.17, 'anom.17.Freeway.D.csv')
 write.csv(anom.18, 'anom.18.Freeway.D.csv')
 
 #library(dplyr)
-anom.18$cat <- ifelse(anom.18$Time == c('00:00:00', '01:00:00', '02:00:00', '03:00:00', '04:00:00', '05:00:00'), 'cat1', 
-                      ifelse(anom.18$Time == c('06:00:00', '07:00:00', '08:00:00', '09:00:00', '10:00:00', '11:00:00'), 'cat2', 
-                             ifelse(anom.18$Time == c('12:00:00', '13:00:00', '14:00:00', '15:00:00', '16:00:00', '17:00:00'), 'cat3', 'cat4')))
-test <- split(anom.18, anom.18$cat)
+anom.17$cat <- ifelse(anom.17$Time == c('00:00:00', '01:00:00', '02:00:00', '03:00:00', '04:00:00', '05:00:00'), 'cat1', 
+                      ifelse(anom.17$Time == c('06:00:00', '07:00:00', '08:00:00', '09:00:00', '10:00:00', '11:00:00'), 'cat2', 
+                             ifelse(anom.17$Time == c('12:00:00', '13:00:00', '14:00:00', '15:00:00', '16:00:00', '17:00:00'), 'cat3', 'cat4')))
+test <- split(anom.17, anom.17$cat)
 anom.test <- lapply(test, function(x) {
   colSums(x[,sapply(x, is.numeric)])})
-test18 <- do.call(rbind, anom.test)
+test17 <- do.call(rbind, anom.test)
 
 
 
@@ -1047,23 +1048,35 @@ write.csv(All.anom.HD, 'All.anom.HD.csv')
 
 #############
 
-All.anom.HD.1 <- read.csv('All.anom.HD2.csv', header = TRUE)[,-1]
+All.anom.HD <- read.csv('All.anom.HD.csv', header = TRUE)[,-1]
+
+num_rows_per_dataframe <- 4
+num_small_dfs <- nrow(All.anom.HD) %/% num_rows_per_dataframe
+
+# Split the data frame into a list of smaller data frames
+list_of_dfs <- split(All.anom.HD, rep(1:num_small_dfs, each = num_rows_per_dataframe, length.out = nrow(All.anom.HD)))
+
+All.anom.HD <- list()
+for(i in 1: length(list_of_dfs)){
+  n.df <- cbind(list_of_dfs[[i]][1,], list_of_dfs[[i]][2,], list_of_dfs[[i]][3,], list_of_dfs[[i]][4,])
+  All.anom.HD[[length(All.anom.HD)+1]] <- n.df
+}
+All.anom.HD <- do.call(rbind.data.frame, All.anom.HD)
+
 
 No.days <- c(9, 4, 4, 3, 3, 4, 7, 3, 4, 3, 4, 4, 3, 3, 7, 3, 4, 1)
 
-All.anom.HD <- matrix(NA, ncol = ncol(All.anom.HD.1), nrow = nrow(All.anom.HD.1))
+All.anom.HD.1 <- matrix(NA, ncol = ncol(All.anom.HD), nrow = nrow(All.anom.HD))
 
 for(i in 1:nrow(All.anom.HD.1)){
-  All.anom.HD[i,] <- as.numeric(All.anom.HD.1[i,])/No.days[i]
+  All.anom.HD.1[i,] <- as.numeric(All.anom.HD[i,])/No.days[i]
 }
 
-# for(i in 1:nrow(All.anom.HD.1)){
-#   All.anom.HD[i,] <- (as.numeric(All.anom.HD.1[i,]) - mean(as.numeric(All.anom.HD.1[i,])))/sd(as.numeric(All.anom.HD.1[i,]))
-# }
-
-colnames(All.anom.HD) <- colnames(All.anom.HD.1)
-All.anom.HD <- as.data.frame(All.anom.HD)
-All.anom.HD$date <- c(1:18)
+colnames(All.anom.HD.1) <- c(paste0(colnames(All.anom.HD)[1:8], '.1'), paste0(colnames(All.anom.HD)[1:8], '.2'), 
+                             paste0(colnames(All.anom.HD)[1:8], '.3'), paste0(colnames(All.anom.HD)[1:8], '.4'))
+All.anom.HD.1 <- as.data.frame(All.anom.HD.1)
+All.anom.HD.1 <- as.data.frame(All.anom.HD.1)
+All.anom.HD.1$date <- c(1:18)
 # hollabs <- c("2019-02-02~02-10", "02-28~03-03", "04-04~04-07", '06-07~06-09', '09-13~09-15', '10-10~10-13',
 #              '2020-01-23~01-29', '02-28~03-01', '04-02~04-05', '05-01~05-03', '06-25~06-28', '10-01~10-04',
 #              '10-09~10-11', '2021-01-01~01-03', '02-10~02-16', '02-27~03-01', '04-02~04-05', '04-30~04-30')
@@ -1073,7 +1086,7 @@ hollabs <- c("2019-1", "2", "3", '4', '5', '6',
              '7', '2021-1', '2', '3', '4', '5')
 
 
-p1 <- ggplot(All.anom.HD, aes(date)) + 
+p1 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = N1ND.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = N1ND.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = N1ND.3, colour = "12:00-17:00"), size = 1) + 
@@ -1091,7 +1104,7 @@ p1 <- ggplot(All.anom.HD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_text(size = 20))
 
-p2 <- ggplot(All.anom.HD, aes(date)) + 
+p2 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = N1SD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = N1SD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = N1SD.3, colour = "12:00-17:00"), size = 1) + 
@@ -1109,7 +1122,7 @@ p2 <- ggplot(All.anom.HD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p3 <- ggplot(All.anom.HD, aes(date)) + 
+p3 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = EN1ND.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = EN1ND.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = EN1ND.3, colour = "12:00-17:00"), size = 1) + 
@@ -1128,7 +1141,7 @@ p3 <- ggplot(All.anom.HD, aes(date)) +
     axis.text.y = element_blank())
 
 
-p4 <- ggplot(All.anom.HD, aes(date)) + 
+p4 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = EN1SD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = EN1SD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = EN1SD.3, colour = "12:00-17:00"), size = 1) + 
@@ -1146,7 +1159,7 @@ p4 <- ggplot(All.anom.HD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p5 <- ggplot(All.anom.HD, aes(date)) + 
+p5 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = EN1ED.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = EN1ED.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = EN1ED.3, colour = "12:00-17:00"), size = 1) + 
@@ -1166,7 +1179,7 @@ p5 <- ggplot(All.anom.HD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_text(size = 20))
 
-p6 <- ggplot(All.anom.HD, aes(date)) + 
+p6 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = EN1WD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = EN1WD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = EN1WD.3, colour = "12:00-17:00"), size = 1) + 
@@ -1186,7 +1199,7 @@ p6 <- ggplot(All.anom.HD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p7 <- ggplot(All.anom.HD, aes(date)) + 
+p7 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = N3ND.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = N3ND.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = N3ND.3, colour = "12:00-17:00"), size = 1) + 
@@ -1206,7 +1219,7 @@ p7 <- ggplot(All.anom.HD, aes(date)) +
     axis.title.y = element_text(size = 20),
     axis.text.y = element_blank())
 
-p8 <- ggplot(All.anom.HD, aes(date)) + 
+p8 <- ggplot(All.anom.HD.1, aes(date)) + 
   geom_line(aes(y = N3SD.1, colour = "00:00-05:00"), size = 1) + 
   geom_line(aes(y = N3SD.2, colour = "06:00-11:00"), size = 1) +
   geom_line(aes(y = N3SD.3, colour = "12:00-17:00"), size = 1) + 
@@ -1228,20 +1241,6 @@ p8 <- ggplot(All.anom.HD, aes(date)) +
 
 library(ggpubr)
 ggarrange(p1, p2, p3, p4, p5, p6, p7, p8, ncol=4, nrow=2, common.legend = TRUE, legend="top", heights = c(1, 1, 1, 1), widths = c(1,1,1,1))
-
-
-# All.anom.HD %>%
-#   gather(key,value, NRND.1, NRND.2, NRND.3, NRND.4) %>%
-#   ggplot(aes(x=date, y=value, colour=key)) +
-#   geom_line()
-
-
-ggplot() + geom_line(aes(y = All.anom.HD$NRND.1),color='red') + 
-  #geom_line(aes=All.anom.HD$NRND.2),color='blue') + 
-  ylab('Values')+xlab('date')
-
-plot(All.anom.HD$NRND.1, type = 'l')
-
 
 
 #############Comparison
