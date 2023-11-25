@@ -27,10 +27,7 @@ holiday.18.all <- read.csv('holiday.18.csv', header = TRUE)[,-1]
 h1 <- 9; h2 <- 4; h3 <- 4; h4 <- 3; h5 <- 3; h6 <- 4; h7 <- 7; h8 <- 3; h9 <- 4; h10 <- 3; 
 h11 <- 4; h12 <- 4; h13 <- 3; h14 <- 3; h15 <- 7; h16 <- 3; h17 <- 4; h18 <- 1
 
-t <- 336
-h <- 24
-n <- t+(h*h17)
-window <- 3
+
 
 detect_classify_anomalies <- function(df, window) {
   df$error <- df$actuals - df$predicted
@@ -55,17 +52,21 @@ detect_classify_anomalies <- function(df, window) {
   return(df)
 }
 
-allyholiday.17 <- forecast::msts(holiday.17.all, seasonal.periods=c(h,h*7))
+t <- 336
+h <- 24
+n <- t+(h*h18)
+window <- 3
+allyholiday.18 <- forecast::msts(holiday.18.all, seasonal.periods=c(h,h*7))
 
 ## Region by Direction
 n.series.R.D <- 8
 series.R.D <- c(336, 337, 343, 342, 338, 339, 340, 341)
 anom_final <- list()
-for(i in 1:n.series.H.D){
+for(i in 1:n.series.R.D){
   anom <- NULL
   for(j in 0:((n-t-h)/h)){
-    train <- window(allyholiday.17[,series.H.D[i]], start = c(1, ((j*h)+1)), end = c(1, (t + (j*h))))
-    valid <- window(allyholiday.17[,series.H.D[i]], start = c(1,( t + (j*h) + 1)), end = c(1, (t + (j*h) +h)))
+    train <- window(allyholiday.18[,series.R.D[i]], start = c(1, ((j*h)+1)), end = c(1, (t + (j*h))))
+    valid <- window(allyholiday.18[,series.R.D[i]], start = c(1,( t + (j*h) + 1)), end = c(1, (t + (j*h) +h)))
     ## model using ARIMA
     f.model <- auto.arima(train,  seasonal.test = "ocsb", xreg=fourier(train, K = c(3,2))) 
     #f.error.train <- as.data.frame(c(train)) - as.data.frame(c(forecast(f.model, xreg=fourier(train, K = c(3,2)))$mean))
@@ -82,14 +83,14 @@ for(i in 1:n.series.H.D){
 anom_final <- do.call(cbind, anom_final)
 colnames(anom_final) <- c('NRND', 'NRSD', 'NRED', 'NRWD', 'CRND', 'CRSD', 'SRND', 'SRSD')
 ## anomaly file by OLS
-anom.17 <- read.csv('anom.17.R.D.csv', header = TRUE)[,-1]
+anom.18 <- read.csv('anom.18.R.D.csv', header = TRUE)[,-1]
 
-anom_final <- cbind.data.frame('Date' = anom.17$Date, 'Time' = anom.17$Time, anom_final)
+anom_final <- cbind.data.frame('Date' = anom.18$Date, 'Time' = anom.18$Time, anom_final)
 
 ## compare the results of OLS by Unrec ARIMA
 
-common_ones_zeros <- hadamard.prod(as.matrix(anom.17[,-c(1,2)]), as.matrix(anom_final[,-c(1,2)])) + 
-  hadamard.prod((1-as.matrix(anom.17[,-c(1,2)])), (1-as.matrix(anom_final[,-c(1,2)])))
+common_ones_zeros <- hadamard.prod(as.matrix(anom.18[,-c(1,2)]), as.matrix(anom_final[,-c(1,2)])) + 
+  hadamard.prod((1-as.matrix(anom.18[,-c(1,2)])), (1-as.matrix(anom_final[,-c(1,2)])))
 
 sum(common_ones_zeros ==1)/(nrow(common_ones_zeros)*ncol(common_ones_zeros))
 
@@ -103,8 +104,8 @@ anom_final <- list()
 for(i in 1:n.series.H.D){
   anom <- NULL
   for(j in 0:((n-t-h)/h)){
-    train <- window(allyholiday.17[,series.H.D[i]], start = c(1, ((j*h)+1)), end = c(1, (t + (j*h))))
-    valid <- window(allyholiday.17[,series.H.D[i]], start = c(1,( t + (j*h) + 1)), end = c(1, (t + (j*h) +h)))
+    train <- window(allyholiday.18[,series.H.D[i]], start = c(1, ((j*h)+1)), end = c(1, (t + (j*h))))
+    valid <- window(allyholiday.18[,series.H.D[i]], start = c(1,( t + (j*h) + 1)), end = c(1, (t + (j*h) +h)))
     ## model using ARIMA
     f.model <- auto.arima(train,  seasonal.test = "ocsb", xreg=fourier(train, K = c(3,2))) 
     #f.error.train <- as.data.frame(c(train)) - as.data.frame(c(forecast(f.model, xreg=fourier(train, K = c(3,2)))$mean))
@@ -121,14 +122,14 @@ for(i in 1:n.series.H.D){
 anom_final <- do.call(cbind, anom_final)
 colnames(anom_final) <- c('N1ND', 'N1SD', 'N3ND', 'N3SD', 'EN1ND', 'EN1SD', 'EN1ED', 'EN1WD')
 ## anomaly file by OLS
-anom.17 <- read.csv('anom.17.H.D.csv', header = TRUE)[,-1]
+anom.18 <- read.csv('anom.18.Freeway.D.csv', header = TRUE)[,-1]
 
-anom_final <- cbind.data.frame('Date' = anom.17$Date, 'Time' = anom.17$Time, anom_final)
+anom_final <- cbind.data.frame('Date' = anom.18$Date, 'Time' = anom.18$Time, anom_final)
 
 ## compare the results of OLS by Unrec ARIMA
 
-common_ones_zeros <- hadamard.prod(as.matrix(anom.17[,-c(1,2)]), as.matrix(anom_final[,-c(1,2)])) + 
-  hadamard.prod((1-as.matrix(anom.17[,-c(1,2)])), (1-as.matrix(anom_final[,-c(1,2)])))
+common_ones_zeros <- hadamard.prod(as.matrix(anom.18[,-c(1,2)]), as.matrix(anom_final[,-c(1,2)])) + 
+  hadamard.prod((1-as.matrix(anom.18[,-c(1,2)])), (1-as.matrix(anom_final[,-c(1,2)])))
 
 sum(common_ones_zeros ==1)/(nrow(common_ones_zeros)*ncol(common_ones_zeros))
 
