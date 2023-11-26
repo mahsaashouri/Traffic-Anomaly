@@ -94,7 +94,7 @@ for(j in 1:ncol(allyhour2021)){
     f.model <- auto.arima(train,  seasonal.test = "ocsb", xreg=fourier(train, K = c(3,2))) 
     f.error.train <- as.data.frame(c(train)) - as.data.frame(c(forecast(f.model, xreg=fourier(train, K = c(3,2)))$mean))
     f.fc.test <- forecast(f.model, xreg=fourier(train,K=c(3,2), h = h))$mean
-    sample.paths <- matrix(NA, ncol = 2000, nrow =  24)
+    sample.paths <- matrix(NA, ncol = sim, nrow =  h)
     for (g in 1:sim) {
       #set.seed(g)
       sample.paths[,g] <- simulate(f.model, future = TRUE, nsim=h, xreg=fourier(train,K=c(3,2), h = h))
@@ -146,13 +146,26 @@ library(Matrix)
 start.time <- Sys.time()
 list.G <- list()
 for(i in 1:length(fc.ARIMA.res)){
-  res <- as.matrix(fc.ARIMA.res[[i]])
-  tar <- lowerD(res)
-  shrink <- shrink.estim(res, tar)
-  w.1 <- shrink[[1]]
-  lambda <- shrink[[2]]
-  weights <-  methods::as(w.1, "sparseMatrix")
-  list.G[[length(list.G)+1]] <- weights
+  res <- as.matrix(fc.arima.res[[i]])
+  n1 <- nrow(res)
+  covm <- crossprod(stats::na.omit(res)) / n1
+  tar <- diag(apply(res, 2, compose(crossprod, stats::na.omit))/n1)
+  corm <- cov2cor(covm)
+  xs <- scale(res, center = FALSE, scale = sqrt(diag(covm)))
+  xs <- xs[stats::complete.cases(xs),]
+  v <- (1/(n1 * (n1 - 1))) * (crossprod(xs^2) - 1/n1 * (crossprod(xs))^2)
+  diag(v) <- 0
+  corapn <- cov2cor(tar)
+  d <- (corm - corapn)^2
+  lambda <- sum(v)/sum(d)
+  lambda <- max(min(lambda, 1), 0)
+  W <- lambda * tar + (1 - lambda) * covm
+  gmat <- GmatrixG(hourgts$groups)
+  smatrix <- as.matrix(SmatrixM(gmat))
+  R <- t(smatrix)%*%solve(W)
+  P <- Matrix::solve(R%*%smatrix)%*%R
+  SP <- smatrix%*%P
+  list.G[[length(list.G)+1]] <- SP
   print(i)
 }
 
@@ -161,7 +174,11 @@ for(i in 1:length(mydataf)){
   fit.test <- split(mydataf[[i]], rep(1:length(fc.OLS.res), each=(24)))
   result.path <- NULL
   for(j in 1:length(list.G)){
-    fc.rec <- t(CG(fit.test[[j]], smatrix, weights = list.G[[j]]))
+    fc.rec <- matrix(NA, nrow = h, ncol = ncol(fc.arima.res[[1]]))
+    for(k in 1:nrow(fit.test[[1]])){
+      f.1 <- matrix(as.numeric(fit.test[[j]][k,]), ncol = 1, nrow = ncol(fit.test[[1]]))
+      fc.rec [k,] <- list.G[[j]] %*% f.1
+    }
     result.path <- bind_rows(result.path, as.data.frame(fc.rec))
   }
   list.sample.rec[[length(list.sample.rec)+1]] <- result.path
@@ -182,28 +199,30 @@ names(list.sample.rec) <- 1:length(list.sample.rec)
 ## Computing prediction intervals - 95% and 99%
 mydataf2 <- lapply(1:ncol(list.sample.rec[[1]]), function(y) as.data.frame(sapply(list.sample.rec, function(x) x[, y])))
 
+level = 95
 quan975 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
 
 for(i in 1:length(mydataf2)){
-  quan975[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.975))
+  quan975[,i] <-  apply(mydataf2[[i]], 1, quantile, probs = (.5 + level / 200))
 }
 
 quan25 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
 
 for(i in 1:length(mydataf2)){
-  quan25[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.025))
+  quan25[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= (.5 - level / 200))
 }
 
+level = 90
 quan95 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
 
 for(i in 1:length(mydataf2)){
-  quan95[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.95))
+  quan95[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= (.5 + level / 200))
 }
 
 quan05 <- matrix(NA, ncol = length(mydataf2), nrow = nrow(mydataf2[[1]]))
 
 for(i in 1:length(mydataf2)){
-  quan05[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= c(0.05))
+  quan05[,i] <-  apply(mydataf2[[i]], 1, quantile, probs= (.5 - level / 200))
 }
 
 
@@ -223,15 +242,35 @@ for(i in 0:(n-t-h)/h){
 list <- list()
 start.time <- Sys.time()
 for(i in 1:length(fc.ARIMA.res)){
-  res <- as.matrix(fc.ARIMA.res[[i]])
-  tar <- lowerD(res)
-  shrink <- shrink.estim(res, tar)
-  w.1 <- shrink[[1]]
-  lambda <- shrink[[2]]
-  weights <-  methods::as(w.1, "sparseMatrix")
-  fc.rec <- t(CG(fit.list[[i]], smatrix, weights = weights))
-  colnames(fc.rec) <- colnames(allyhour2021) 
+  res <- as.matrix(fc.arima.res[[i]])
+  n1 <- nrow(res)
+  covm <- crossprod(stats::na.omit(res)) / n1
+  tar <- diag(apply(res, 2, compose(crossprod, stats::na.omit))/n1)
+  corm <- cov2cor(covm)
+  xs <- scale(res, center = FALSE, scale = sqrt(diag(covm)))
+  xs <- xs[stats::complete.cases(xs),]
+  v <- (1/(n1 * (n1 - 1))) * (crossprod(xs^2) - 1/n1 * (crossprod(xs))^2)
+  diag(v) <- 0
+  corapn <- cov2cor(tar)
+  d <- (corm - corapn)^2
+  lambda <- sum(v)/sum(d)
+  lambda <- max(min(lambda, 1), 0)
+  W <- lambda * tar + (1 - lambda) * covm
+  gmat <- GmatrixG(hourgts$groups)
+  smatrix <- as.matrix(SmatrixM(gmat))
+  R <- t(smatrix)%*%solve(W)
+  P <- Matrix::solve(R%*%smatrix)%*%R
+  SP <- smatrix%*%P
+  
+  fit.test <- fit.list[[i]]
+  fc.rec <- matrix(NA, nrow = h, ncol = ncol(allyhourall))
+  for(j in 1:nrow(fit.test)){
+    f.1 <- matrix(as.numeric(fit.test[j,]), ncol = 1, nrow = ncol(fit.test))
+    fc.rec [j,] <- SP %*% f.1
+  }
+  colnames(fc.rec) <- colnames(allyhourall) 
   list[[length(list)+1]] <- fc.rec
+  list.G[[length(list.G)+1]] <- P
   print(i)
 }
 
